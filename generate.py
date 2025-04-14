@@ -80,8 +80,9 @@ else:
         else:
             data = res["data"]
             status = data["status"]
-        print("⏳ Waiting for video generation...")
-        time.sleep(3)
+        if status == "waiting":
+            print("⏳ Waiting for video generation...")
+            time.sleep(3)
 
     print("✨ AI video generation completed.")
     video_url = data["video_url"]
@@ -92,3 +93,12 @@ else:
     with open("generated.mp4", "wb") as f:
         f.write(video_response.content)
     print("🎥 Video downloaded as generated.mp4")
+
+    caption_url = data["caption_url"]
+
+    # Download caption file as "caption.ass"
+
+    caption_response = requests.get(caption_url)
+    with open("caption.ass", "wb") as f:
+        f.write(caption_response.content)
+    print("📚 Caption downloaded as caption.ass")
