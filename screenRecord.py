@@ -3,8 +3,9 @@ import cv2
 import numpy as np
 from playwright.async_api import async_playwright
 import random
+import time
 
-WIDTH, HEIGHT = 1280, 720
+WIDTH, HEIGHT = 1920, 1080
 FPS = 60
 DURATION = 10  # seconds
 
@@ -29,35 +30,43 @@ async def record_browser():
         except Exception as e:
             print("⚠️ Page load error:", e)
 
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
+
+        print("🔄 Scrolling and recording...")
+
+        start = time.time()
 
         # Set up OpenCV video writer
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        out = cv2.VideoWriter("output.mp4", fourcc, FPS, (WIDTH, HEIGHT))
+        fourcc = cv2.VideoWriter_fourcc(*"avc1")
+        out = cv2.VideoWriter("screen.mp4", fourcc, FPS, (WIDTH, HEIGHT))
         step_num = 0
-        speed_multiplier = random.uniform(0.5, 1.5)
+        speed_multiplier = random.uniform(0.9, 1.1)
         for i in range(FPS * DURATION):
-            scroll_i = i % (3 * FPS)
-            new_step_num = step_num = i // (3 * FPS)
+            scroll_i = i % (2 * FPS)
+            new_step_num = step_num = i // (2 * FPS)
             if step_num != new_step_num:
                 speed_multiplier = random.uniform(0.5, 1.5)
             scroll_speed = (
-                bell_curve((scroll_i - FPS) / 2 / FPS)
+                bell_curve((scroll_i - FPS) / FPS)
                 * 30
                 * speed_multiplier
                 * random.uniform(0.7, 1.1)
             )
             if FPS <= scroll_i:
-                print(scroll_speed)
                 await page.evaluate(f"window.scrollBy(0, {scroll_speed})")
-            screenshot_bytes = await page.screenshot(type="png")
+            screenshot_bytes = await page.screenshot(type="jpeg", quality=70)
             img_array = np.frombuffer(screenshot_bytes, dtype=np.uint8)
             frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-            out.write(frame)
+
+            await asyncio.to_thread(out.write, frame)
 
         out.release()
         await browser.close()
         print("✅ Saved to output.mp4")
+
+        end = time.time()
+        elapsed_time = end - start
+        print(f"⏱️ Elapsed time: {elapsed_time:.2f} seconds")
 
 
 if __name__ == "__main__":
