@@ -7,6 +7,7 @@ from moviepy import (
 from datetime import datetime
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+from moviepy import CompositeVideoClip, ImageClip
 
 overlay_size = 400
 margin = 30
@@ -33,9 +34,15 @@ def parse_ass_dialogues(ass_path):
     return dialogues
 
 
-from moviepy import TextClip, ColorClip, CompositeVideoClip, ImageClip
-import numpy as np
-from PIL import Image, ImageDraw
+def shift_dialogues(dialogues, offset):
+    return [
+        {
+            "start": max(0, d["start"] + offset),
+            "end": max(0, d["end"] + offset),
+            "text": d["text"],
+        }
+        for d in dialogues
+    ]
 
 
 def render_subtitles(
@@ -128,6 +135,7 @@ position = (background.w - overlay_size - margin, margin)
 
 # Parse and render subtitles
 dialogues = parse_ass_dialogues("caption.ass")
+dialogues = shift_dialogues(dialogues, offset=-1)  # Shift earlier by 1s
 subtitle_clips = render_subtitles(dialogues, video_size=(background.w, background.h))
 
 # Combine everything
